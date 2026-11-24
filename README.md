@@ -24,7 +24,7 @@
 | 批注 | 选中文字可存为批注(接口已备好,前端可扩展) |
 | 安全护栏 | 危机语句一票拦截转介真人;前端无 key |
 
-## 架构(三层,和老师示例一致)
+## 架构
 ```
 手机/浏览器 → 前端 index.html(纯静态·无 key,GitHub Pages)
                   │  POST /api/ask {selected, before, after, question}
@@ -59,7 +59,7 @@ python3 -m http.server 5500   # 打开 http://localhost:5500
 - 前端 → GitHub Pages:把 `frontend/index.html` 里的 `BACKEND` 改成你的 Railway 域名,后端 `CORS_ORIGINS` 填 Pages 域名。
 - 数据:SQLite 文件 `backend/reader.db` 会自动创建;Railway 上用持久化卷(Volume)挂载 `backend/` 以保留数据。
 
-## 三条红线(老师的一票否决项)
+## 三条红线
 1. **key 只在后端**——前端源码 `grep -rniE "sk-[a-z0-9]{16}"` 必须为零。
 2. **危机由确定性代码兜底**——`is_crisis()` 入口+出口各拦一次,不只靠模型自觉。
 3. **不上线 = 没有 impact**。
