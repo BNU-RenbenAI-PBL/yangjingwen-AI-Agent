@@ -1,0 +1,9 @@
+# 密钥与本地文件,绝不提交
+.env
+backend/.env
+__pycache__/
+*.pyc
+backend/notes/
+backend/reader.db
+backend/.venv/
+.DS_Store
