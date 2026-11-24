@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="paper">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>阅伴 · 沉浸式 AI 共读</title>
+  <style>
+    :root {
+      --bg: #f6f2ea;
+      --bg-bar: rgba(246, 242, 234, 0.92);
+      --bg-card: #ffffff;
+      --bg-soft: #f5f3ef;
+      --ink: #2c2520;
+      --ink-soft: #63584f;
+      --muted: #9a8f85;
+      --line: #e6dfd3;
+      --purple: #5c4582;
+      --purple-hover: #4b376c;
+      --purple-soft: rgba(92, 69, 130, 0.12);
+      --purple-line: rgba(92, 69, 130, 0.55);
+      --danger: #b91c1c;
+      --shadow-card: 0 22px 60px rgba(32, 24, 18, 0.18);
+      --font-serif: "Noto Serif SC", "Songti SC", "STSong", "PingFang SC", Georgia, serif;
+      --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      --reader-font: var(--font-serif);
+      --reader-size: 18px;
+      --reader-lh: 2.0;
+    }
+    [data-theme="white"] {
+      --bg: #ffffff;
+      --bg-bar: rgba(255, 255, 255, 0.92);
+      --bg-card: #ffffff;
+      --bg-soft: #f5f5f7;
+      --ink: #1d1d1f;
+      --ink-soft: #515154;
+      --muted: #86868b;
+      --line: #e5e5ea;
+    }
+    [data-theme="night"] {
+      --bg: #171619;
+      --bg-bar: rgba(23, 22, 25, 0.92);
+      --bg-card: #232127;
+      --bg-soft: #2c2931;
+      --ink: #e4e0d8;
+      --ink-soft: #aba499;
+      --muted: #726c63;
+      --line: #322f38;
+      --purple: #9b82c8;
+      --purple-hover: #b098db;
+      --purple-soft: rgba(155, 130, 200, 0.18);
+      --purple-line: rgba(155, 130, 200, 0.65);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      transition: background 0.25s, color 0.25s;
+    }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+
+    /* 极简顶栏 */
+    header {
+      height: 52px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      background: var(--bg-bar);
+      backdrop-filter: blur(10px);
+      z-index: 30;
+    }
+    .h-left, .h-right { display: flex; align-items: center; gap: 10px; min-width: 110px; }
+    .h-right { justify-content: flex-end; }
+    .h-center {
+      text-align: center;
+      flex: 1;
+      min-width: 0;
+      padding: 0 12px;
+    }
+    .h-book-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .h-book-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+    .h-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--ink-soft);
+      font-size: 15px;
+      transition: 0.15s;
+    }
+    .h-icon:hover { background: var(--purple-soft); color: var(--purple); }
+
+    /* 纯净阅读主区 */
+    #reader-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 24px 100px;
+      position: relative;
+      transition: filter 0.2s;
+    }
+    #reader-wrap.blurred {
+      filter: blur(3px);
+      pointer-events: none;
+      user-select: none;
+    }
+    #reader-content {
+      max-width: 680px;
+      margin: 0 auto;
+      font-family: var(--reader-font);
+      font-size: var(--reader-size);
+      line-height: var(--reader-lh);
+      color: var(--ink);
+    }
+    #reader-content h1 {
+      font-size: 1.5em;
+      font-weight: 700;
+      margin: 1.5em 0 0.8em;
+      line-height: 1.4;
+      text-align: center;
+    }
+    #reader-content h2 {
+      font-size: 1.25em;
+      font-weight: 700;
+      margin: 1.4em 0 0.6em;
+      line-height: 1.45;
+    }
+    #reader-content h3 {
+      font-size: 1.08em;
+      font-weight: 600;
+      margin: 1.2em 0 0.5em;
+      color: var(--ink-soft);
+    }
+    #reader-content p {
+      margin: 0 0 1.2em;
+      text-align: justify;
+      word-break: break-word;
+      letter-spacing: 0.015em;
+    }
+    #reader-content .li-item {
+      margin: 0 0 0.8em;
+      padding-left: 1.2em;
+    }
+    #reader-content blockquote {
+      margin: 1.2em 0;
+      padding: 10px 16px;
+      border-left: 3px solid var(--purple);
+      background: var(--purple-soft);
+      border-radius: 0 8px 8px 0;
+      color: var(--ink-soft);
+      font-size: 0.95em;
+    }
+    #reader-content pre {
+      margin: 1.2em 0;
+      padding: 14px;
+      background: var(--bg-soft);
+      border-radius: 10px;
+      overflow-x: auto;
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+    }
+    #reader-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.2em 0;
+      font-size: 0.85em;
+    }
+    #reader-content th, #reader-content td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+    }
+    #reader-content hr { border: none; border-top: 1px solid var(--line); margin: 2em 0; }
+    #reader-content ::selection { background: rgba(92, 69, 130, 0.22); }
+
+    /* 紫色共读下划线（核心视觉特征） */
+    .annotated-span {
+      text-decoration: underline;
+      text-decoration-color: var(--purple-line);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 5px;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: background 0.15s;
+    }
+    .annotated-span:hover {
+      background: var(--purple-soft);
+    }
+
+    /* 空状态引导 */
+    .welcome {
+      min-height: 68vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 16px;
+    }
+    .welcome h1 { font-size: 24px; font-weight: 700; margin: 0 !important; }
+    .welcome p { font-size: 14.5px; color: var(--ink-soft); max-width: 400px; line-height: 1.7; text-align: center !important; }
+    .welcome-actions { display: flex; gap: 12px; margin-top: 8px; }
+    .btn-purple {
+      background: var(--purple);
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      font-weight: 600;
+      transition: 0.15s;
+    }
+    .btn-purple:hover { background: var(--purple-hover); }
+    .btn-outline {
+      border: 1px solid var(--line);
+      background: var(--bg-card);
+      color: var(--ink);
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 13.5px;
+    }
+
+    /* 极简底栏：目录 + 紫色进度滑块 */
+    footer {
+      height: 52px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 18px;
+      background: var(--bg-bar);
+      backdrop-filter: blur(10px);
+      z-index: 30;
+    }
+    .f-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      padding: 5px 8px;
+      border-radius: 8px;
+    }
+    .f-btn:hover { background: var(--purple-soft); color: var(--purple); }
+    .prog-bar-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .prog-label { font-size: 11.5px; color: var(--muted); white-space: nowrap; min-width: 64px; }
+    input[type="range"].prog-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--line);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"].prog-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2.5px solid var(--purple);
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+    }
+
+    /* 右侧边缘悬浮圆钮（呼出伴读卡片） */
+    .edge-fab {
+      position: fixed;
+      right: 16px;
+      top: 52%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #1f1f24;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+      z-index: 35;
+      font-size: 15px;
+      transition: transform 0.15s;
+    }
+    .edge-fab:hover { transform: translateY(-50%) scale(1.06); }
+
+    /* 划词浮动小工具条 */
+    #sel-bar {
+      position: fixed;
+      z-index: 60;
+      background: #221f26;
+      color: #fff;
+      padding: 5px 6px;
+      border-radius: 999px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      display: none;
+      align-items: center;
+      gap: 4px;
+    }
+    #sel-bar.show { display: flex; }
+    #sel-bar button {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 999px;
+      color: #f4f1ea;
+    }
+    #sel-bar button:hover { background: rgba(255, 255, 255, 0.14); }
+
+    /* ====== 核心：居中圆角共读批注卡片（复刻参考图） ====== */
+    .card-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(30, 25, 20, 0.18);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 70;
+    }
+    .card-overlay.show { display: flex; }
+    .co-card {
+      width: 540px;
+      max-width: 96vw;
+      max-height: 84vh;
+      background: var(--bg-card);
+      border-radius: 20px;
+      box-shadow: var(--shadow-card);
+      padding: 22px 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+      animation: popIn 0.18s ease-out;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.96) translateY(6px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .co-quote {
+      font-family: var(--reader-font);
+      font-size: 13.5px;
+      line-height: 1.7;
+      color: var(--ink-soft);
+      background: var(--bg-soft);
+      padding: 12px 14px;
+      border-radius: 12px;
+      max-height: 110px;
+      overflow-y: auto;
+    }
+    .co-actor {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      font-weight: 500;
+    }
+    .avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .avatar.user { background: #7b61a8; }
+    .avatar.ai { background: #5a8f96; }
+
+    .co-box {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: var(--bg-card);
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--ink);
+    }
+    .co-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.6;
+      resize: none;
+    }
+    .co-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .co-chip {
+      font-size: 11.5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--bg-soft);
+      color: var(--ink-soft);
+      transition: 0.15s;
+    }
+    .co-chip:hover { background: var(--purple-soft); color: var(--purple); }
+    .co-ai-body p { margin-bottom: 8px; }
+    .co-ai-body p:last-child { margin-bottom: 0; }
+    .co-ai-body ul { padding-left: 18px; margin: 6px 0; }
+
+    .co-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .co-footer-left { display: flex; gap: 8px; }
+    .btn-ghost {
+      font-size: 12.5px;
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 999px;
+    }
+    .btn-ghost:hover { background: var(--bg-soft); color: var(--ink); }
+    .btn-ask-sm {
+      font-size: 13px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      border: 1px solid var(--purple);
+      color: var(--purple);
+      font-weight: 600;
+    }
+    .btn-ask-sm:hover { background: var(--purple-soft); }
+
+    /* ====== 左侧滑出抽屉（书架 / 目录 / 批注本） ====== */
+    .drawer-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.22);
+      display: none;
+      z-index: 80;
+    }
+    .drawer-mask.show { display: block; }
+    .drawer {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 320px;
+      max-width: 86vw;
+      background: var(--bg-card);
+      box-shadow: 12px 0 40px rgba(0, 0, 0, 0.12);
+      display: flex;
+      flex-direction: column;
+      z-index: 81;
+      transform: translateX(-100%);
+      transition: transform 0.22s ease;
+    }
+    .drawer.show { transform: translateX(0); }
+    .drawer-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--line);
+      padding: 12px 14px 0;
+      gap: 8px;
+    }
+    .d-tab {
+      flex: 1;
+      padding: 8px 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+    }
+    .d-tab.on { color: var(--purple); border-bottom-color: var(--purple); }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+    .upload-zone {
+      border: 1.5px dashed var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--bg-soft);
+    }
+    .upload-zone:hover { border-color: var(--purple); }
+    .book-row {
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      cursor: pointer;
+      position: relative;
+    }
+    .book-row.on { border-color: var(--purple); background: var(--purple-soft); }
+    .book-row .bt { font-size: 13.5px; font-weight: 600; padding-right: 22px; }
+    .book-row .bm { font-size: 11.5px; color: var(--muted); margin-top: 4px; display: flex; justify-content: space-between; }
+    .book-del { position: absolute; top: 9px; right: 8px; font-size: 12px; color: var(--muted); padding: 2px 5px; }
+    .book-del:hover { color: var(--danger); }
+
+    .toc-row { padding: 7px 10px; border-radius: 8px; font-size: 13px; color: var(--ink-soft); cursor: pointer; }
+    .toc-row:hover { background: var(--bg-soft); color: var(--ink); }
+    .toc-row.h1 { font-weight: 700; color: var(--ink); }
+    .toc-row.h2 { padding-left: 20px; font-size: 12.5px; }
+    .toc-row.h3 { padding-left: 30px; font-size: 12px; color: var(--muted); }
+
+    .note-row {
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      font-size: 12.5px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .note-row:hover { border-color: var(--purple); }
+    .note-q { color: var(--ink-soft); border-left: 2px solid var(--purple); padding-left: 8px; }
+    .badge { padding: 2px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 600; }
+    .badge.user { background: var(--purple-soft); color: var(--purple); }
+    .badge.ai { background: rgba(90, 143, 150, 0.16); color: #3d737a; }
+
+    /* 阅读设置 / 后端设置小弹窗 */
+    .pop-panel {
+      position: fixed;
+      top: 56px;
+      right: 18px;
+      width: 280px;
+      background: var(--bg-card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow-card);
+      padding: 16px;
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      z-index: 85;
+    }
+    .pop-panel.show { display: flex; }
+    .pop-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+    .seg { display: flex; gap: 6px; }
+    .seg button {
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      font-size: 12px;
+    }
+    .seg button.on { border-color: var(--purple); background: var(--purple-soft); color: var(--purple); font-weight: 600; }
+
+    #toast {
+      position: fixed;
+      bottom: 66px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #221f26;
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      opacity: 0;
+      transition: 0.2s;
+      z-index: 100;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="h-left">
+      <button class="h-icon" id="btn-shelf" title="打开书架">✕</button>
+    </div>
+    <div class="h-center">
+      <div class="h-book-title" id="h-title">阅伴</div>
+      <div class="h-book-sub" id="h-sub">AI 沉浸式伴读阅读器</div>
+    </div>
+    <div class="h-right">
+      <button class="h-icon" id="btn-bookmark" title="保存当前阅读书签">🔖</button>
+      <button class="h-icon" id="btn-aa" title="排版与后端设置">Aa</button>
+    </div>
+  </header>
+
+  <main id="reader-wrap">
+    <div id="reader-content">
+      <div class="welcome">
+        <h1>阅伴 · 共读空间</h1>
+        <p>导入你的 PDF 论文、电子书或笔记。阅读时选中任意句子，呼出共读卡片与 AI 结合上下文对话，并将你们的批注一起留存在书页上。</p>
+        <div class="welcome-actions">
+          <button class="btn-purple" id="welcome-upload">+ 导入书籍 / 论文</button>
+          <button class="btn-outline" id="welcome-shelf">打开书架</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <button class="f-btn" id="btn-toc">☰ 目录</button>
+    <div class="prog-bar-wrap">
+      <span class="prog-label" id="prog-label">0%</span>
+      <input type="range" class="prog-slider" id="prog-slider" min="0" max="100" value="0" />
+    </div>
+    <button class="f-btn" id="btn-notes-open">批注本</button>
+  </footer>
+
+  <button class="edge-fab" id="edge-fab" title="基于当前阅读进度问阅伴">✨</button>
+
+  <div id="sel-bar">
+    <button id="bar-ask">✨ 问阅伴 & 批注</button>
+    <button id="bar-copy">复制</button>
+  </div>
+
+  <!-- 核心：居中圆角共读批注卡片 -->
+  <div class="card-overlay" id="co-overlay">
+    <div class="co-card" id="co-card">
+      <div class="co-quote" id="co-quote"></div>
+
+      <div class="co-actor">
+        <span class="avatar user">我</span>
+        <span>我的问题 / 批注</span>
+      </div>
+      <div class="co-box">
+        <textarea class="co-input" id="co-inp" rows="2" placeholder="写下你对这句话的疑问或想法…（回车或点下方提问）"></textarea>
+        <div class="co-chips">
+          <button class="co-chip" data-q="这段话是什么意思？结合上下文帮我理解一下">💡 结合上下文解释</button>
+          <button class="co-chip" data-q="这里的指代或专业术语分别指什么？">🔍 拆解指代/术语</button>
+          <button class="co-chip" data-q="作者为什么在这里写这句话？起什么作用？">🔗 作者意图</button>
+        </div>
+      </div>
+
+      <div id="co-ai-wrap" style="display:none;flex-direction:column;gap:8px;">
+        <div class="co-actor">
+          <span class="avatar ai">阅</span>
+          <span>阅伴 AI</span>
+        </div>
+        <div class="co-box co-ai-body" id="co-ai-reply"></div>
+      </div>
+
+      <div class="co-footer">
+        <div class="co-footer-left">
+          <button class="btn-ghost" id="co-close">关闭</button>
+          <button class="btn-ask-sm" id="co-ask-btn">问阅伴</button>
+        </div>
+        <button class="btn-purple" id="co-save-btn">存批注</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 左侧滑出抽屉：书架 / 目录 / 批注本 -->
+  <div class="drawer-mask" id="drawer-mask"></div>
+  <aside class="drawer" id="drawer">
+    <div class="drawer-tabs">
+      <button class="d-tab on" data-dtab="books">书架</button>
+      <button class="d-tab" data-dtab="toc">目录</button>
+      <button class="d-tab" data-dtab="notes">批注</button>
+    </div>
+    <div class="drawer-body" id="dtab-books">
+      <div class="upload-zone" id="upload-zone">
+        <div style="font-size:13.5px;font-weight:600;" id="upload-txt">+ 导入 PDF / EPUB / DOCX / MD / TXT</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">支持拖拽文件到此处</div>
+        <input type="file" id="file-inp" accept=".pdf,.txt,.md,.docx,.epub" hidden />
+      </div>
+      <div id="book-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+    <div class="drawer-body" id="dtab-toc" style="display:none"></div>
+    <div class="drawer-body" id="dtab-notes" style="display:none"></div>
+  </aside>
+
+  <!-- Aa 阅读设置浮窗 -->
+  <div class="pop-panel" id="aa-panel">
+    <div class="pop-row">
+      <span>背景纸张</span>
+      <div class="seg">
+        <button data-th="paper" class="on">暖纸</button>
+        <button data-th="white">晨白</button>
+        <button data-th="night">夜间</button>
+      </div>
+    </div>
+    <div class="pop-row">
+      <span>字体</span>
+      <div class="seg">
+        <button id="f-serif" class="on">宋体</button>
+        <button id="f-sans">黑体</button>
+      </div>
+    </div>
+    <div class="pop-row">
+      <span>字号</span>
+      <div class="seg">
+        <button id="s-down">A-</button>
+        <span id="s-val" style="padding:5px 6px;font-size:12px;">18</span>
+        <button id="s-up">A+</button>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--line);padding-top:10px;">
+      <div style="font-size:11.5px;color:var(--muted);margin-bottom:6px;">后端服务地址（Railway 部署后填写）</div>
+      <div style="display:flex;gap:6px;">
+        <input id="cfg-backend" style="flex:1;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:12px;background:var(--bg);color:var(--ink);" />
+        <button id="cfg-save" class="btn-purple" style="padding:6px 12px;font-size:12px;">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    const DEFAULT_BACKEND = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+      ? "http://localhost:8000"
+      : "https://your-app.up.railway.app";
+    let BACKEND = localStorage.getItem("yueban_backend") || DEFAULT_BACKEND;
+    const USER_ID = "local";
+
+    const $ = s => document.querySelector(s);
+    const $$ = s => [...document.querySelectorAll(s)];
+
+    const state = {
+      books: {},
+      currentBookId: null,
+      currentSeq: 0,
+      annotations: [],
+      selection: null,
+      lastAiReply: "",
+      fontSize: 18,
+    };
+
+    function toast(msg) {
+      const t = $("#toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2000);
+    }
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+    function renderInlineMd(s) {
+      let out = esc(s);
+      out = out.replace(/`([^`]+)`/g, "<code>$1</code>");
+      out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      out = out.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+      return out;
+    }
+    function renderAiMd(s) {
+      const lines = String(s).replace(/\r\n/g, "\n").split("\n");
+      let html = "", inUl = false;
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line) { if (inUl) { html += "</ul>"; inUl = false; } continue; }
+        if (/^[-*•·]\s+/.test(line)) {
+          if (!inUl) { html += "<ul>"; inUl = true; }
+          html += `<li>${renderInlineMd(line.replace(/^[-*•·]\s+/, ""))}</li>`;
+        } else {
+          if (inUl) { html += "</ul>"; inUl = false; }
+          html += `<p>${renderInlineMd(line)}</p>`;
+        }
+      }
+      if (inUl) html += "</ul>";
+      return html || `<p>${esc(s)}</p>`;
+    }
+
+    // ---- 抽屉控制 ----
+    function openDrawer(tab = "books") {
+      $("#drawer-mask").classList.add("show");
+      $("#drawer").classList.add("show");
+      switchDTab(tab);
+    }
+    function closeDrawer() {
+      $("#drawer-mask").classList.remove("show");
+      $("#drawer").classList.remove("show");
+    }
+    function switchDTab(tab) {
+      $$(".d-tab").forEach(b => b.classList.toggle("on", b.dataset.dtab === tab));
+      $("#dtab-books").style.display = tab === "books" ? "flex" : "none";
+      $("#dtab-toc").style.display = tab === "toc" ? "flex" : "none";
+      $("#dtab-notes").style.display = tab === "notes" ? "flex" : "none";
+    }
+    $$(".d-tab").forEach(b => b.onclick = () => switchDTab(b.dataset.dtab));
+    $("#drawer-mask").onclick = closeDrawer;
+    $("#btn-shelf").onclick = () => openDrawer("books");
+    $("#welcome-shelf").onclick = () => openDrawer("books");
+    $("#btn-toc").onclick = () => openDrawer("toc");
+    $("#btn-notes-open").onclick = () => openDrawer("notes");
+
+    // ---- Aa 设置面板 ----
+    $("#btn-aa").onclick = e => {
+      e.stopPropagation();
+      $("#cfg-backend").value = BACKEND;
+      $("#aa-panel").classList.toggle("show");
+    };
+    document.addEventListener("click", e => {
+      if (!$("#aa-panel").contains(e.target) && e.target !== $("#btn-aa")) {
+        $("#aa-panel").classList.remove("show");
+      }
+    });
+    $$("#aa-panel [data-th]").forEach(btn => {
+      btn.onclick = () => {
+        $$("#aa-panel [data-th]").forEach(b => b.classList.remove("on"));
+        btn.classList.add("on");
+        document.documentElement.setAttribute("data-theme", btn.dataset.th);
+      };
+    });
+    $("#f-serif").onclick = () => {
+      $("#f-serif").classList.add("on"); $("#f-sans").classList.remove("on");
+      document.documentElement.style.setProperty("--reader-font", "var(--font-serif)");
+    };
+    $("#f-sans").onclick = () => {
+      $("#f-sans").classList.add("on"); $("#f-serif").classList.remove("on");
+      document.documentElement.style.setProperty("--reader-font", "var(--font-sans)");
+    };
+    $("#s-up").onclick = () => {
+      state.fontSize = Math.min(24, state.fontSize + 1);
+      $("#s-val").textContent = state.fontSize;
+      document.documentElement.style.setProperty("--reader-size", state.fontSize + "px");
+    };
+    $("#s-down").onclick = () => {
+      state.fontSize = Math.max(14, state.fontSize - 1);
+      $("#s-val").textContent = state.fontSize;
+      document.documentElement.style.setProperty("--reader-size", state.fontSize + "px");
+    };
+    $("#cfg-save").onclick = () => {
+      const v = $("#cfg-backend").value.trim().replace(/\/+$/, "");
+      if (v) {
+        BACKEND = v;
+        localStorage.setItem("yueban_backend", v);
+        $("#aa-panel").classList.remove("show");
+        loadBooks();
+        toast("后端地址已保存");
+      }
+    };
+
+    // ---- 书库与打开书籍 ----
+    async function loadBooks() {
+      try {
+        const r = await fetch(`${BACKEND}/api/books`);
+        const d = await r.json();
+        const list = $("#book-list");
+        list.innerHTML = "";
+        (d.books || []).forEach(b => {
+          const pct = b.para_count > 0 && b.last_seq != null ? Math.round(((b.last_seq + 1) / b.para_count) * 100) : 0;
+          const row = document.createElement("div");
+          row.className = "book-row" + (b.id === state.currentBookId ? " on" : "");
+          row.innerHTML = `
+            <div class="bt">《${esc(b.title)}》</div>
+            <div class="bm"><span>${b.para_count} 段</span><span>${pct ? "已读 " + pct + "%" : "未读"}</span></div>
+            <button class="book-del" title="删除">✕</button>
+          `;
+          row.querySelector(".book-del").onclick = async e => {
+            e.stopPropagation();
+            if (!confirm(`确定删除《${b.title}》吗？`)) return;
+            await fetch(`${BACKEND}/api/books/${b.id}`, { method: "DELETE" });
+            if (state.currentBookId === b.id) state.currentBookId = null;
+            loadBooks();
+          };
+          row.onclick = () => { closeDrawer(); openBook(b.id); };
+          list.appendChild(row);
+        });
+      } catch (e) {
+        toast("无法连接后端，请确认服务已启动");
+      }
+    }
+
+    async function openBook(bookId) {
+      try {
+        const r = await fetch(`${BACKEND}/api/books/${bookId}`);
+        if (!r.ok) throw new Error();
+        const book = await r.json();
+        state.books[bookId] = book;
+        state.currentBookId = bookId;
+        $("#h-title").textContent = `《${book.title}》`;
+        $("#h-sub").textContent = `共 ${book.para_count} 段`;
+        loadBooks();
+
+        const [prRes, annRes] = await Promise.all([
+          fetch(`${BACKEND}/api/books/${bookId}/progress?user_id=${USER_ID}`).then(x => x.json()),
+          fetch(`${BACKEND}/api/books/${bookId}/annotations?user_id=${USER_ID}`).then(x => x.json()),
+        ]);
+        state.annotations = annRes.annotations || [];
+        renderBookContent(book.paragraphs);
+        renderToc(book.paragraphs);
+        renderNotes();
+
+        const seq = prRes.progress ? prRes.progress.para_seq : 0;
+        state.currentSeq = seq;
+        updateProgressUI(seq, book.para_count);
+        if (seq > 0) setTimeout(() => scrollToSeq(seq), 80);
+      } catch (e) {
+        toast("打开书籍失败");
+      }
+    }
+
+    function renderBookContent(paragraphs) {
+      const box = $("#reader-content");
+      box.innerHTML = "";
+      if (!paragraphs || !paragraphs.length) return;
+
+      const annsBySeq = {};
+      state.annotations.forEach(a => {
+        if (!annsBySeq[a.para_seq]) annsBySeq[a.para_seq] = [];
+        annsBySeq[a.para_seq].push(a);
+      });
+
+      paragraphs.forEach((p, idx) => {
+        const seq = p.seq ?? idx;
+        const kind = p.kind || "p";
+        let el;
+        if (kind === "h1") el = document.createElement("h1");
+        else if (kind === "h2") el = document.createElement("h2");
+        else if (kind === "h3") el = document.createElement("h3");
+        else if (kind === "quote") el = document.createElement("blockquote");
+        else if (kind === "code") { el = document.createElement("pre"); el.textContent = p.text; }
+        else if (kind === "hr") el = document.createElement("hr");
+        else if (kind === "table") el = renderMdTable(p.text);
+        else if (kind === "list") {
+          el = document.createElement("div");
+          el.className = "li-item";
+          el.innerHTML = "• " + renderInlineMd(p.text.replace(/^([-*+]|\d+[.)])\s+/, ""));
+        } else {
+          el = document.createElement("p");
+        }
+
+        if (!["code", "hr", "table", "list"].includes(kind)) {
+          let html = renderInlineMd(p.text);
+          const segAnns = annsBySeq[seq] || [];
+          if (segAnns.length) {
+            segAnns.forEach(a => {
+              const target = esc(a.selected.trim());
+              if (target && html.includes(target)) {
+                html = html.replace(target, `<span class="annotated-span" data-ann-seq="${seq}">${target}</span>`);
+              }
+            });
+          }
+          el.innerHTML = html;
+        }
+        el.dataset.seq = seq;
+        box.appendChild(el);
+      });
+
+      $$("#reader-content .annotated-span").forEach(sp => {
+        sp.onclick = e => {
+          e.stopPropagation();
+          const seq = +sp.dataset.annSeq;
+          const matching = state.annotations.filter(a => a.para_seq === seq);
+          const userAnn = matching.find(a => a.actor_type === "user");
+          const aiAnn = matching.find(a => a.actor_type === "ai");
+          const quote = (userAnn || aiAnn || matching[0]).selected;
+          openCoCard(quote, seq, userAnn ? userAnn.note : "", aiAnn ? aiAnn.note : "");
+        };
+      });
+    }
+
+    function renderMdTable(md) {
+      const table = document.createElement("table");
+      const rows = md.split("\n").filter(r => r.trim() && !/^\|[\s:-]+\|$/.test(r.trim()));
+      rows.forEach((r, i) => {
+        const tr = document.createElement("tr");
+        r.split("|").slice(1, -1).forEach(c => {
+          const cell = document.createElement(i === 0 ? "th" : "td");
+          cell.innerHTML = renderInlineMd(c.trim());
+          tr.appendChild(cell);
+        });
+        table.appendChild(tr);
+      });
+      return table;
+    }
+
+    function renderToc(paragraphs) {
+      const toc = $("#dtab-toc");
+      toc.innerHTML = "";
+      const hs = paragraphs.filter(p => ["h1", "h2", "h3"].includes(p.kind));
+      if (!hs.length) {
+        toc.innerHTML = '<div style="font-size:12.5px;color:var(--muted);padding:12px;">本书未检测到章节标题</div>';
+        return;
+      }
+      hs.forEach(h => {
+        const el = document.createElement("div");
+        el.className = `toc-row ${h.kind}`;
+        el.textContent = h.text;
+        el.onclick = () => { closeDrawer(); scrollToSeq(h.seq); };
+        toc.appendChild(el);
+      });
+    }
+
+    function renderNotes() {
+      const box = $("#dtab-notes");
+      box.innerHTML = "";
+      if (!state.annotations.length) {
+        box.innerHTML = '<div style="font-size:12.5px;color:var(--muted);padding:12px;">选中文字呼出共读卡片并点击「存批注」，即可在此查看</div>';
+        return;
+      }
+      state.annotations.forEach(a => {
+        const isAi = a.actor_type === "ai";
+        const row = document.createElement("div");
+        row.className = "note-row";
+        row.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="badge ${isAi ? "ai" : "user"}">${isAi ? "阅伴 AI" : "我的批注"}</span>
+            <span style="font-size:11px;color:var(--muted);">第 ${a.para_seq + 1} 段 · <button class="ndel" style="color:var(--muted)">删除</button></span>
+          </div>
+          <div class="note-q">${esc(a.selected)}</div>
+          ${a.note ? `<div style="line-height:1.5;">${esc(a.note)}</div>` : ""}
+        `;
+        row.querySelector(".ndel").onclick = async e => {
+          e.stopPropagation();
+          await fetch(`${BACKEND}/api/annotations/${a.id}`, { method: "DELETE" });
+          state.annotations = state.annotations.filter(x => x.id !== a.id);
+          renderNotes();
+          renderBookContent(state.books[state.currentBookId].paragraphs);
+        };
+        row.onclick = () => { closeDrawer(); scrollToSeq(a.para_seq); };
+        box.appendChild(row);
+      });
+    }
+
+    function scrollToSeq(seq) {
+      const el = $(`#reader-content [data-seq="${seq}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function updateProgressUI(seq, total) {
+      const pct = total > 0 ? Math.round(((seq + 1) / total) * 100) : 0;
+      $("#prog-label").textContent = `${pct}% (${seq + 1}/${total})`;
+      $("#prog-slider").value = pct;
+      $("#h-sub").textContent = `第 ${seq + 1} / ${total} 段 · ${pct}%`;
+    }
+
+    $("#prog-slider").addEventListener("input", e => {
+      if (!state.currentBookId) return;
+      const total = state.books[state.currentBookId]?.para_count || 1;
+      const targetSeq = Math.min(total - 1, Math.max(0, Math.round((e.target.value / 100) * (total - 1))));
+      scrollToSeq(targetSeq);
+    });
+
+    let scrollTimer = null;
+    $("#reader-wrap").addEventListener("scroll", () => {
+      if (!state.currentBookId) return;
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        const els = $$("#reader-content [data-seq]");
+        const top = $("#reader-wrap").getBoundingClientRect().top;
+        let cur = 0;
+        for (const el of els) {
+          if (el.getBoundingClientRect().top - top < 120) cur = +el.dataset.seq;
+        }
+        state.currentSeq = cur;
+        const total = state.books[state.currentBookId]?.para_count || 0;
+        updateProgressUI(cur, total);
+        fetch(`${BACKEND}/api/books/${state.currentBookId}/progress`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: USER_ID, book_id: state.currentBookId, para_seq: cur }),
+        }).catch(() => {});
+      }, 450);
+    });
+
+    $("#btn-bookmark").onclick = async () => {
+      if (!state.currentBookId) return toast("请先打开一本书");
+      const paras = state.books[state.currentBookId]?.paragraphs || [];
+      const curPara = paras[state.currentSeq];
+      if (!curPara) return;
+      await fetch(`${BACKEND}/api/books/${state.currentBookId}/annotations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: USER_ID,
+          book_id: state.currentBookId,
+          para_seq: state.currentSeq,
+          selected: curPara.text.slice(0, 120),
+          note: "🔖 阅读书签",
+        }),
+      });
+      const annRes = await fetch(`${BACKEND}/api/books/${state.currentBookId}/annotations?user_id=${USER_ID}`).then(r => r.json());
+      state.annotations = annRes.annotations || [];
+      renderNotes();
+      toast("已添加书签到当前段落");
+    };
+
+    const selBar = $("#sel-bar");
+    document.addEventListener("mouseup", e => {
+      if (selBar.contains(e.target) || $("#co-overlay").classList.contains("show")) return;
+      setTimeout(() => {
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed) { selBar.classList.remove("show"); return; }
+        const txt = sel.toString().trim();
+        if (txt.length < 2) { selBar.classList.remove("show"); return; }
+        let node = sel.anchorNode;
+        while (node && node !== document && (!node.dataset || node.dataset.seq === undefined)) {
+          node = node.parentElement;
+        }
+        if (!node || !node.dataset || node.dataset.seq === undefined) {
+          selBar.classList.remove("show");
+          return;
+        }
+        const seq = +node.dataset.seq;
+        const paras = state.books[state.currentBookId]?.paragraphs || [];
+        const before = paras.slice(Math.max(0, seq - 2), seq).map(x => x.text).join("\n");
+        const after = paras.slice(seq + 1, seq + 3).map(x => x.text).join("\n");
+        state.selection = { selected: txt, before, after, para_seq: seq };
+
+        const rect = sel.getRangeAt(0).getBoundingClientRect();
+        selBar.style.left = Math.max(12, Math.min(window.innerWidth - 220, rect.left + rect.width / 2 - 95)) + "px";
+        selBar.style.top = Math.max(58, rect.top - 44) + "px";
+        selBar.classList.add("show");
+      }, 10);
+    });
+
+    $("#bar-copy").onclick = () => {
+      if (state.selection) navigator.clipboard.writeText(state.selection.selected);
+      selBar.classList.remove("show");
+      toast("已复制");
+    };
+
+    function openCoCard(quoteText, seq, presetUserNote = "", presetAiReply = "") {
+      selBar.classList.remove("show");
+      $("#reader-wrap").classList.add("blurred");
+      $("#co-quote").textContent = quoteText ? `“${quoteText}”` : "（当前阅读进度自由提问）";
+      $("#co-inp").value = presetUserNote;
+      state.lastAiReply = presetAiReply;
+      if (presetAiReply) {
+        $("#co-ai-wrap").style.display = "flex";
+        $("#co-ai-reply").innerHTML = renderAiMd(presetAiReply);
+      } else {
+        $("#co-ai-wrap").style.display = "none";
+        $("#co-ai-reply").innerHTML = "";
+      }
+      $("#co-overlay").classList.add("show");
+      if (!presetUserNote) $("#co-inp").focus();
+    }
+
+    function closeCoCard() {
+      $("#co-overlay").classList.remove("show");
+      $("#reader-wrap").classList.remove("blurred");
+    }
+
+    $("#bar-ask").onclick = () => {
+      if (!state.selection) return;
+      openCoCard(state.selection.selected, state.selection.para_seq);
+    };
+
+    $("#edge-fab").onclick = () => {
+      if (!state.currentBookId) return toast("请先导入或打开一本书");
+      const paras = state.books[state.currentBookId]?.paragraphs || [];
+      const cur = paras[state.currentSeq];
+      const before = paras.slice(Math.max(0, state.currentSeq - 2), state.currentSeq).map(x => x.text).join("\n");
+      const after = paras.slice(state.currentSeq + 1, state.currentSeq + 3).map(x => x.text).join("\n");
+      state.selection = { selected: cur ? cur.text : "", before, after, para_seq: state.currentSeq };
+      openCoCard(cur ? cur.text : "", state.currentSeq);
+    };
+
+    $("#co-close").onclick = closeCoCard;
+    $("#co-overlay").onclick = e => { if (e.target === $("#co-overlay")) closeCoCard(); };
+
+    async function askCoCard(customQ) {
+      const q = (customQ ?? $("#co-inp").value).trim();
+      if (customQ) $("#co-inp").value = customQ;
+      const btn = $("#co-ask-btn");
+      btn.disabled = true;
+      btn.textContent = "思考中…";
+      $("#co-ai-wrap").style.display = "flex";
+      $("#co-ai-reply").innerHTML = '<p style="color:var(--muted);">阅伴正在结合前后文思考…</p>';
+
+      try {
+        const payload = state.selection
+          ? { ...state.selection, question: q, book_id: state.currentBookId || "", user_id: USER_ID }
+          : { selected: "", before: "", after: "", question: q, book_id: state.currentBookId || "", para_seq: state.currentSeq, user_id: USER_ID };
+        const r = await fetch(`${BACKEND}/api/ask`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!r.ok) throw new Error();
+        const d = await r.json();
+        state.lastAiReply = d.reply;
+        $("#co-ai-reply").innerHTML = renderAiMd(d.reply);
+      } catch (e) {
+        state.lastAiReply = "连接后端失败。如果你正处于危机中，请立即拨打全国心理援助热线 **12356** 或 **120**。";
+        $("#co-ai-reply").innerHTML = renderAiMd(state.lastAiReply);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "问阅伴";
+      }
+    }
+
+    $("#co-ask-btn").onclick = () => askCoCard();
+    $("#co-inp").addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); askCoCard(); }
+    });
+    $$(".co-chip").forEach(c => c.onclick = () => askCoCard(c.dataset.q));
+
+    $("#co-save-btn").onclick = async () => {
+      if (!state.currentBookId || !state.selection) return closeCoCard();
+      const userNote = $("#co-inp").value.trim();
+      const aiReply = state.lastAiReply.trim();
+      if (!userNote && !aiReply) return toast("请先写点想法或问一下阅伴");
+
+      await fetch(`${BACKEND}/api/books/${state.currentBookId}/annotations/pair`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: USER_ID,
+          book_id: state.currentBookId,
+          para_seq: state.selection.para_seq,
+          selected: state.selection.selected,
+          user_note: userNote,
+          ai_reply: aiReply,
+        }),
+      });
+      closeCoCard();
+      toast("已存批注");
+      const annRes = await fetch(`${BACKEND}/api/books/${state.currentBookId}/annotations?user_id=${USER_ID}`).then(r => r.json());
+      state.annotations = annRes.annotations || [];
+      renderNotes();
+      renderBookContent(state.books[state.currentBookId].paragraphs);
+    };
+
+    const uploadZone = $("#upload-zone");
+    const fileInp = $("#file-inp");
+    uploadZone.onclick = () => fileInp.click();
+    $("#welcome-upload").onclick = () => fileInp.click();
+    uploadZone.ondragover = e => { e.preventDefault(); uploadZone.style.borderColor = "var(--purple)"; };
+    uploadZone.ondragleave = () => { uploadZone.style.borderColor = "var(--line)"; };
+    uploadZone.ondrop = e => {
+      e.preventDefault();
+      uploadZone.style.borderColor = "var(--line)";
+      if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
+    };
+    fileInp.onchange = () => { if (fileInp.files[0]) uploadFile(fileInp.files[0]); };
+
+    async function uploadFile(file) {
+      const fd = new FormData();
+      fd.append("file", file);
+      $("#upload-txt").textContent = "正在解析排版…";
+      try {
+        const r = await fetch(`${BACKEND}/api/books/upload`, { method: "POST", body: fd });
+        const d = await r.json();
+        if (d.book_id) {
+          toast(`《${d.title}》导入成功`);
+          closeDrawer();
+          await loadBooks();
+          await openBook(d.book_id);
+        } else {
+          toast("导入失败");
+        }
+      } catch (e) {
+        toast("上传失败，请确认后端已启动");
+      } finally {
+        $("#upload-txt").textContent = "+ 导入 PDF / EPUB / DOCX / MD / TXT";
+        fileInp.value = "";
+      }
+    }
+
+    loadBooks();
+  </script>
+</body>
+</html>
