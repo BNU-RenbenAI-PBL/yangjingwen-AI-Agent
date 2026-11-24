@@ -1,6 +1,6 @@
 > **仓库**:https://github.com/BNU-RenbenAI-PBL/yangjingwen-AI-Agent · **在线页面**:https://bnu-renbenai-pbl.github.io/yangjingwen-AI-Agent/
 
-# 阅伴 · 阅读器 + AI 伴读
+# 阅伴 · AI 沉浸式伴读阅读器
 
 > **一句话**:一个「阅读器 + AI 伴读」——你导入一本书(或 PDF),AI 能看到全文、知道你的阅读进度;你选中书里任意一句话,它就结合**上文和下文**帮你读懂它,而不是孤立地望文生义。
 
